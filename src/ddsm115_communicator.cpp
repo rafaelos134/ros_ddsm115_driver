@@ -1,14 +1,13 @@
 #include "ddsm115_communicator.hpp"
 
-namespace ddsm115
-{
+namespace ddsm115{
+
 /**
  * @brief Construct a new DDSM115Communicator::DDSM115Communicator object
  * 
  * @param port_name 
  */
-DDSM115Communicator::DDSM115Communicator(std::string port_name)
-{
+DDSM115Communicator::DDSM115Communicator(std::string port_name){
   struct termios tty;
 
   port_name_ = port_name;
@@ -16,19 +15,21 @@ DDSM115Communicator::DDSM115Communicator(std::string port_name)
   pthread_mutex_init(&port_mutex_, NULL);
   ROS_INFO("Opening serial port %s", port_name_.c_str());
   port_fd_ = open(port_name_.c_str(), O_RDWR);
-  if (port_fd_ <= 0)
-  {
+
+  if (port_fd_ <= 0){
     ROS_ERROR("Unable to open port %s", port_name_.c_str());
     ddsm115_state_ = DDSM115State::STATE_FAILED;
     return;
   }
+
   ROS_INFO("Getting tty attributes");
-  if (tcgetattr(port_fd_, &tty) != 0)
-  {
+
+  if (tcgetattr(port_fd_, &tty) != 0){
     ROS_ERROR("Unable to get attributes for port %s", port_name_.c_str());
     ddsm115_state_ = DDSM115State::STATE_FAILED;
     return;
   }
+
   tty.c_cflag &= ~PARENB; // No parity
   tty.c_cflag &= ~CSTOPB; // 1 stop bit
   tty.c_cflag &= ~CSIZE; // Clear byte size bits
@@ -45,13 +46,15 @@ DDSM115Communicator::DDSM115Communicator(std::string port_name)
   cfsetispeed(&tty, B115200);
   cfsetospeed(&tty, B115200);
   ROS_INFO("Setting tty attributes");
-  if (tcsetattr(port_fd_, TCSANOW, &tty) != 0)
-  {
+
+  if (tcsetattr(port_fd_, TCSANOW, &tty) != 0){
     ROS_ERROR("Error %i setting port attributes: %s\n", errno, strerror(errno));
     ddsm115_state_ = DDSM115State::STATE_FAILED;
     return;
   }
 }
+
+
 /**
  * @brief Disconnect from DDSM115
  * 
