@@ -134,6 +134,16 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(${PROJECT_NAME}_node src/ros_ddsm115_driver.cpp src/ddsm115_communicator.cpp)
 
+
+#Novo
+# Compila o comunicador DDSM115 como uma biblioteca para evitar compilação duplicada
+add_library(ddsm115_communicator src/ddsm115_communicator.cpp)
+target_link_libraries(ddsm115_communicator ${catkin_LIBRARIES})
+
+# Cria o executável para o novo driver contínuo
+add_executable(ddsm115_driver_continuous src/ros_ddsm115_driver_continuous.cpp) #repetido
+target_link_libraries(ddsm115_driver_continuous ${catkin_LIBRARIES} ddsm115_communicator)
+
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
