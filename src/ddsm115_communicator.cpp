@@ -85,7 +85,7 @@ void DDSM115Communicator::setWheelMode(int wheel_id, DDSM115Mode mode)
  * 
  * @param wheel_id 
  * @param rpm 
- * @return ddsm115_drive_response 
+ * @return ddsm115_drive_response        "as mudancas devem ser aq" novo
  */
 ddsm115_drive_response DDSM115Communicator::setWheelRPM(int wheel_id, double rpm)
 {

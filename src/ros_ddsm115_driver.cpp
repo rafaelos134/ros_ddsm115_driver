@@ -218,8 +218,7 @@ int main(int argc, char** argv)
   }
 
   // Do all setup for every wheel
-  for (int i = 0; i < (int)wheel_names_list.size(); i++)
-  {
+  for (int i = 0; i < (int)wheel_names_list.size(); i++){
     // Check that parameters are valid
     if (wheel_names_list[i].length() == 0)
     {
@@ -262,6 +261,13 @@ int main(int argc, char** argv)
     // Set wheel mode to velocity loop
     ddsm115_communicator->setWheelMode(wheel_ids_list[i], ddsm115::DDSM115Mode::VELOCITY_LOOP);
   }
+
+  //modificao
+  // ros::Subscriber sub = node.subscribe("/comando_motor", 10, motorCommandCallback);
+  // ROS_INFO("Driver DDS M115 pronto e aguardando comandos no tópico /comando_motor.");
+
+  
+
   // Add signal handler for safe shutdown of the node
   signal(SIGINT, onShutdown);
   // Run the node

@@ -5,6 +5,7 @@
 #include <std_msgs/Float64.h>
 #include <unordered_set>
 #include <math.h>
+#include "geometry_msgs/Twist.h"
 
 #define DEFAULT_SERIAL_PORT "/dev/ttyUSB0"
 
