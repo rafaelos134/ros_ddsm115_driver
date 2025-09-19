@@ -112,22 +112,22 @@ double rpm2Vel(double rpm)
  * @param target_velocity_msg 
  * @param wheel_name 
  */
-void wheelTargetVelocityCallback(const std_msgs::Float64::ConstPtr& target_velocity_msg, std::string wheel_name)
-{
+void wheelTargetVelocityCallback(const std_msgs::Float64::ConstPtr& target_velocity_msg, std::string wheel_name){
   std_msgs::Float64 velocity_msg;
   std_msgs::Float64 angle_msg;
   std_msgs::Float64 current_msg;
   // ROS_INFO("I heard: [%f] for wheel \"%s\"", target_velocity_msg->data, wheel_name.c_str());
   int wheel_index = wheelIndexByName(wheel_name);
-  if (wheel_index < 0)
-  {
+  
+  if (wheel_index < 0){
     ROS_WARN("Received target velocity for unknown wheel %s", wheel_name.c_str());
     return;
   }
+
   ddsm115::ddsm115_drive_response response = ddsm115_communicator->setWheelRPM(
       wheel_ids_list[wheel_index], vel2Rpm(target_velocity_msg->data) * wheel_directions[wheel_index]);
-  if (response.result == ddsm115::DDSM115State::STATE_NORMAL)
-  {
+
+  if (response.result == ddsm115::DDSM115State::STATE_NORMAL){
     velocity_msg.data = rpm2Vel(response.velocity) * wheel_directions[wheel_index];
     angle_msg.data = round(response.position * (2.0 * M_PI / 360.0) * wheel_directions[wheel_index] * 100) / 100 * -1.0;
     current_msg.data = response.current;
@@ -135,6 +135,8 @@ void wheelTargetVelocityCallback(const std_msgs::Float64::ConstPtr& target_veloc
     wheel_angle_pubs[wheel_index].publish(angle_msg);
     wheel_current_pubs[wheel_index].publish(current_msg);
   }
+
+
 }
 
 /**
@@ -163,8 +165,7 @@ int wheelIndexByName(std::string wheel_name)
  * @param argv 
  * @return int 
  */
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv){
   std::string port_name;
   ros::init(argc, argv, "ros_ddsm115_driver_node");
   ros::NodeHandle node("~");
@@ -192,27 +193,23 @@ int main(int argc, char** argv)
   node.getParam("wheel_directions", wheel_directions_list);
 
   // Check that wheel array parameters have equial length (specify all wheels)
-  if (!(wheel_names_list.size() == wheel_ids_list.size() && wheel_ids_list.size() == wheel_directions_list.size()))
-  {
+  if (!(wheel_names_list.size() == wheel_ids_list.size() && wheel_ids_list.size() == wheel_directions_list.size())){
     ROS_ERROR("wheel_names, wheel_ids and wheel_directions must be of an equal size");
     return -1;
   }
   // Check that wheel names and ids are distinct (can't run with 2 wheels with the same name or id)
-  if (!stringsAreDistinct(wheel_names_list))
-  {
+  if (!stringsAreDistinct(wheel_names_list)){
     ROS_ERROR("wheel names must be distinct");
     return -1;
   }
-  if (!intsAreDistinct(wheel_ids_list))
-  {
+  if (!intsAreDistinct(wheel_ids_list)){
     ROS_ERROR("wheel ids must be distinct");
     return -1;
   }
 
   // Open DDSM115 communication interface
   ddsm115_communicator = new ddsm115::DDSM115Communicator(port_name);
-  if (ddsm115_communicator->getState() != ddsm115::DDSM115State::STATE_NORMAL)
-  {
+  if (ddsm115_communicator->getState() != ddsm115::DDSM115State::STATE_NORMAL){
     ROS_ERROR("Failed to initialize DDSM115 communication");
     return -1;
   }
@@ -220,51 +217,107 @@ int main(int argc, char** argv)
   // Do all setup for every wheel
   for (int i = 0; i < (int)wheel_names_list.size(); i++){
     // Check that parameters are valid
-    if (wheel_names_list[i].length() == 0)
-    {
+    if (wheel_names_list[i].length() == 0){
       ROS_ERROR("wheel name can't be empty");
       return -1;
     }
-    if (wheel_ids_list[i] <= 0)
-    {
+    if (wheel_ids_list[i] <= 0){
       ROS_ERROR("wheel id must be >0");
       return -1;
     }
+
     ROS_INFO("Adding wheel %s id %d and direction %s", wheel_names_list[i].c_str(), wheel_ids_list[i],
              wheel_directions_list[i].c_str());
+    
     // Create wheel direction multiplyers array
-    if (wheel_directions_list[i] == "forward")
-    {
+    if (wheel_directions_list[i] == "forward"){
       wheel_directions.push_back(1);
     }
-    else
-    {
+    else{
       wheel_directions.push_back(-1);
     }
+
+
     /*
       Create wheel target velocity subscriber, bind with wheel name as additional parameter
       to handle all wheels with single callback
     */
-    ros::Subscriber velocity_sub =
-        node.subscribe<std_msgs::Float64>("/" + wheel_names_list[i] + "/target_velocity", 1,
+    ros::Subscriber velocity_sub = node.subscribe<std_msgs::Float64>("/" + wheel_names_list[i] + "/target_velocity", 1,
                                           boost::bind(&wheelTargetVelocityCallback, _1, wheel_names_list[i]));
     wheel_velocity_subs.push_back(velocity_sub);
+
     // Create publisher for wheel velocity
     ros::Publisher velocity_pub = node.advertise<std_msgs::Float64>("/" + wheel_names_list[i] + "/current_velocity", 1);
     wheel_velocity_pubs.push_back(velocity_pub);
+    
     // Create publisher for wheel angle
     ros::Publisher angle_pub = node.advertise<std_msgs::Float64>("/" + wheel_names_list[i] + "/angle", 1);
     wheel_angle_pubs.push_back(angle_pub);
+    
     // Create publisher for wheel current consumption
     ros::Publisher current_pub = node.advertise<std_msgs::Float64>("/" + wheel_names_list[i] + "/current", 1);
     wheel_current_pubs.push_back(current_pub);
+    
     // Set wheel mode to velocity loop
     ddsm115_communicator->setWheelMode(wheel_ids_list[i], ddsm115::DDSM115Mode::VELOCITY_LOOP);
   }
 
-  //modificao
-  // ros::Subscriber sub = node.subscribe("/comando_motor", 10, motorCommandCallback);
-  // ROS_INFO("Driver DDS M115 pronto e aguardando comandos no tópico /comando_motor.");
+
+
+  // get and pub velocities at 1 sec
+  ros::Rate rate(1); 
+
+  while (ros::ok()) {
+    for (int i = 0; i < (int)wheel_names_list.size(); i++) {
+      ddsm115::ddsm115_drive_response response = ddsm115_communicator->getWheelRPM(wheel_ids_list[i]);
+      
+      std_msgs::Float64 vel_msg;
+      vel_msg.data = response.velocity;
+      ROS_INFO("Received velocity command: %d", i);
+
+      // wheel_velocity_pubs[i].publish(vel_msg);
+      wheel_velocity_pubs[i].publish(vel_msg);
+        
+    }
+
+    ros::spinOnce();
+    rate.sleep();
+          
+  }
+
+  // wheel_velocity_subs.push_back(velocity_sub);
+  // wheel_velocity_pubs[i].publish(vel_msg);
+  
+
+
+  // ROS_INFO("Wheel %s (id=%d) velocity: %.2f RPM", wheel_names_list[i].c_str(), wheel_ids_list[i], response.velocity);
+
+        
+
+//       double target_rpm = 100.0; // <- aqui você define ou pega de outro lugar
+//       ddsm115_drive_response resp = ddsm115_communicator->setWheelRPM(wheel_ids_list[i], target_rpm);
+
+//         // Publica velocidade medida
+//         std_msgs::Float64 vel_msg;
+//         vel_msg.data = resp.velocity;
+//         wheel_velocity_pubs[i].publish(vel_msg);
+
+//         // Publica posição
+//         std_msgs::Float64 angle_msg;
+//         angle_msg.data = resp.position;
+//         wheel_angle_pubs[i].publish(angle_msg);
+
+//         // Publica corrente
+//         std_msgs::Float64 curr_msg;
+//         curr_msg.data = resp.current;
+//         wheel_current_pubs[i].publish(curr_msg);
+
+//       ROS_INFO("Wheel %s (id=%d) velocity: %.2f RPM",
+//       wheel_names_list[i].c_str(), wheel_ids_list[i], resp.velocity);
+    
+
+
+
 
   
 

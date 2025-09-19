@@ -58,8 +58,10 @@ namespace ddsm115{
       void setWheelMode(int wheel_id, DDSM115Mode mode);
       ddsm115_drive_response setWheelRPM(int wheel_id, double rpm);
       DDSM115State getState();
+      ddsm115_drive_response getWheelRPM(int wheel_id);
 
     private:
+      std::map<int, ddsm115_drive_response> last_responses;
       std::string port_name_;
       int port_fd_;
       pthread_mutex_t port_mutex_;

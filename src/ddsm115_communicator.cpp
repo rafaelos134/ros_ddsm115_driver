@@ -87,10 +87,10 @@ void DDSM115Communicator::setWheelMode(int wheel_id, DDSM115Mode mode)
  * @param rpm 
  * @return ddsm115_drive_response        "as mudancas devem ser aq" novo
  */
-ddsm115_drive_response DDSM115Communicator::setWheelRPM(int wheel_id, double rpm)
-{
+ddsm115_drive_response DDSM115Communicator::setWheelRPM(int wheel_id, double rpm){
   ddsm115_drive_response result;
   int16_t rpm_value = (int16_t)rpm;
+  
   // TODO: this implementation of data encoding is not endian safe
   uint8_t drive_cmd[] = { (uint8_t)wheel_id,
                           DDSM115Command::COMMAND_DRIVE_MOTOR,
@@ -102,7 +102,9 @@ ddsm115_drive_response DDSM115Communicator::setWheelRPM(int wheel_id, double rpm
                           0x00,
                           0x00,
                           0x00 };
+  
   uint8_t drive_response[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+  
   drive_cmd[9] = maximCrc8(drive_cmd, 9);
   lockPort();
   write(port_fd_, &drive_cmd, sizeof(drive_cmd));
@@ -116,15 +118,16 @@ ddsm115_drive_response DDSM115Communicator::setWheelRPM(int wheel_id, double rpm
     }
     total_num_bytes += num_bytes;
   }
+  
   unlockPort();
-  if (num_bytes < 0)
-  {
+  
+  // processing posible error
+  if (num_bytes < 0){
     ROS_ERROR("Error reading DDSM115 response for wheel id %d", wheel_id);
     result.result = DDSM115State::STATE_FAILED;
     return result;
   }
-  if (total_num_bytes < 10)
-  {
+  if (total_num_bytes < 10){
     // ROS_WARN("Timeout reading DDSM115 response for wheel id %d", wheel_id);
     // ROS_INFO("Received %d bytes", total_num_bytes);
     // for (int i = 0; i < 10; i++) {
@@ -133,18 +136,17 @@ ddsm115_drive_response DDSM115Communicator::setWheelRPM(int wheel_id, double rpm
     result.result = DDSM115State::STATE_FAILED;
     return result;
   }
-  if (drive_response[0] != wheel_id)
-  {
+  if (drive_response[0] != wheel_id){
     ROS_INFO("Received response for wheel %d instead of %d", drive_response[0], wheel_id);
     result.result = DDSM115State::STATE_FAILED;
     return result;
   }
-  if (drive_response[9] != maximCrc8(drive_response, 9))
-  {
+  if (drive_response[9] != maximCrc8(drive_response, 9)){
     ROS_ERROR("CRC error in response from wheel id %d", wheel_id);
     result.result = DDSM115State::STATE_FAILED;
     return result;
   }
+  
   // TODO: this implementation of data decoding is not endian safe
   int16_t drive_current = 0;
   int16_t drive_velocity = 0;
@@ -156,13 +158,35 @@ ddsm115_drive_response DDSM115Communicator::setWheelRPM(int wheel_id, double rpm
   drive_current = (drive_response[2] << 8) + drive_response[3];
   drive_velocity = (drive_response[4] << 8) + drive_response[5];
   drive_position = (drive_response[6] << 8) + drive_response[7];
-  // ROS_INFO("drive %d : velocity = %d, position = %d", drive_response[0], drive_velocity, drive_position);
+  
+  ROS_INFO("drive %d : velocity = %d, position = %d", drive_response[0], drive_velocity, drive_position);
   result.velocity = (double)drive_velocity;
   result.position = (double)drive_position * (360.0 / 32767.0);
   result.current = (double)drive_current * (8.0 / 32767.0);
   result.result = DDSM115State::STATE_NORMAL;
+
+  last_responses[wheel_id] = result;
+  
   return result;
 }
+
+// new
+/**
+ * @brief get wheel sppeds
+ * 
+ * @param wheel_id 
+ * @return velocity whell
+ */
+ddsm115_drive_response DDSM115Communicator::getWheelRPM(int wheel_id){
+
+  ddsm115_drive_response response = last_responses[wheel_id];
+
+  // std::cout << response.velocity << std::endl;
+
+  return response;
+
+}
+
 
 /**
  * @brief Lock communication mutex
