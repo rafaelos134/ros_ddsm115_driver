@@ -106,6 +106,8 @@ double rpm2Vel(double rpm)
   return rpm / 60 * (M_PI * 2);
 }
 
+
+// talvez retornar uma variavel
 /**
  * @brief Call back for all wheels target velocity topics
  * 
@@ -116,8 +118,10 @@ void wheelTargetVelocityCallback(const std_msgs::Float64::ConstPtr& target_veloc
   std_msgs::Float64 velocity_msg;
   std_msgs::Float64 angle_msg;
   std_msgs::Float64 current_msg;
-  // ROS_INFO("I heard: [%f] for wheel \"%s\"", target_velocity_msg->data, wheel_name.c_str());
+  ROS_INFO("I heard: [%f] for wheel \"%s\"", target_velocity_msg->data, wheel_name.c_str());
   int wheel_index = wheelIndexByName(wheel_name);
+
+  
   
   if (wheel_index < 0){
     ROS_WARN("Received target velocity for unknown wheel %s", wheel_name.c_str());
@@ -127,14 +131,18 @@ void wheelTargetVelocityCallback(const std_msgs::Float64::ConstPtr& target_veloc
   ddsm115::ddsm115_drive_response response = ddsm115_communicator->setWheelRPM(
       wheel_ids_list[wheel_index], vel2Rpm(target_velocity_msg->data) * wheel_directions[wheel_index]);
 
-  if (response.result == ddsm115::DDSM115State::STATE_NORMAL){
-    velocity_msg.data = rpm2Vel(response.velocity) * wheel_directions[wheel_index];
-    angle_msg.data = round(response.position * (2.0 * M_PI / 360.0) * wheel_directions[wheel_index] * 100) / 100 * -1.0;
-    current_msg.data = response.current;
-    wheel_velocity_pubs[wheel_index].publish(velocity_msg);
-    wheel_angle_pubs[wheel_index].publish(angle_msg);
-    wheel_current_pubs[wheel_index].publish(current_msg);
-  }
+  std::cout << ddsm115_communicator << std::endl;
+
+  std::cout << rpm2Vel(response.velocity) << std::endl;
+  
+  // if (response.result == ddsm115::DDSM115State::STATE_NORMAL){
+    //   velocity_msg.data = rpm2Vel(response.velocity) * wheel_directions[wheel_index];
+    //   angle_msg.data = round(response.position * (2.0 * M_PI / 360.0) * wheel_directions[wheel_index] * 100) / 100 * -1.0;
+    //   current_msg.data = response.current;
+    //   wheel_velocity_pubs[wheel_index].publish(velocity_msg);
+    //   wheel_angle_pubs[wheel_index].publish(angle_msg);
+    //   wheel_current_pubs[wheel_index].publish(current_msg);
+  // }
 
 
 }
@@ -264,18 +272,20 @@ int main(int argc, char** argv){
 
 
 
-  // get and pub velocities at 1 sec
+  // get and pub velocities
   ros::Rate rate(1); 
-
+  std::cout << ddsm115_communicator << std::endl;
   while (ros::ok()) {
+    
+    
     for (int i = 0; i < (int)wheel_names_list.size(); i++) {
       ddsm115::ddsm115_drive_response response = ddsm115_communicator->getWheelRPM(wheel_ids_list[i]);
-      
-      std_msgs::Float64 vel_msg;
-      vel_msg.data = response.velocity;
-      ROS_INFO("Received velocity command: %d", i);
 
-      // wheel_velocity_pubs[i].publish(vel_msg);
+      // std::cout << ddsm115_communicator << std::endl;
+
+      std_msgs::Float64 vel_msg;
+      vel_msg.data = rpm2Vel(response.velocity) * wheel_directions[i];
+
       wheel_velocity_pubs[i].publish(vel_msg);
         
     }
@@ -285,41 +295,6 @@ int main(int argc, char** argv){
           
   }
 
-  // wheel_velocity_subs.push_back(velocity_sub);
-  // wheel_velocity_pubs[i].publish(vel_msg);
-  
-
-
-  // ROS_INFO("Wheel %s (id=%d) velocity: %.2f RPM", wheel_names_list[i].c_str(), wheel_ids_list[i], response.velocity);
-
-        
-
-//       double target_rpm = 100.0; // <- aqui você define ou pega de outro lugar
-//       ddsm115_drive_response resp = ddsm115_communicator->setWheelRPM(wheel_ids_list[i], target_rpm);
-
-//         // Publica velocidade medida
-//         std_msgs::Float64 vel_msg;
-//         vel_msg.data = resp.velocity;
-//         wheel_velocity_pubs[i].publish(vel_msg);
-
-//         // Publica posição
-//         std_msgs::Float64 angle_msg;
-//         angle_msg.data = resp.position;
-//         wheel_angle_pubs[i].publish(angle_msg);
-
-//         // Publica corrente
-//         std_msgs::Float64 curr_msg;
-//         curr_msg.data = resp.current;
-//         wheel_current_pubs[i].publish(curr_msg);
-
-//       ROS_INFO("Wheel %s (id=%d) velocity: %.2f RPM",
-//       wheel_names_list[i].c_str(), wheel_ids_list[i], resp.velocity);
-    
-
-
-
-
-  
 
   // Add signal handler for safe shutdown of the node
   signal(SIGINT, onShutdown);

@@ -166,25 +166,26 @@ ddsm115_drive_response DDSM115Communicator::setWheelRPM(int wheel_id, double rpm
   result.result = DDSM115State::STATE_NORMAL;
 
   last_responses[wheel_id] = result;
+
+  // sdt::cout << "funcao" << std::endl;
   
+  std::cout << last_responses[wheel_id].velocity << std::endl;
+
+
+
   return result;
 }
 
 // new
 /**
- * @brief get wheel sppeds
+ * @brief get wheel spped
  * 
  * @param wheel_id 
- * @return velocity whell
+ * @return velocity wheel
  */
 ddsm115_drive_response DDSM115Communicator::getWheelRPM(int wheel_id){
 
-  ddsm115_drive_response response = last_responses[wheel_id];
-
-  // std::cout << response.velocity << std::endl;
-
-  return response;
-
+  return last_responses[wheel_id];
 }
 
 
