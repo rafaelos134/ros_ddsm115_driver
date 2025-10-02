@@ -106,6 +106,8 @@ ddsm115_drive_response DDSM115Communicator::setWheelRPM(int wheel_id, double rpm
   // tcdrain(port_fd_);
   int total_num_bytes = 0;
   int num_bytes = 0;
+
+
   for (int i = 0; i < sizeof(drive_response); i++) {
     num_bytes = read(port_fd_, &drive_response[i], 1);
     if (num_bytes <= 0) {
@@ -113,6 +115,8 @@ ddsm115_drive_response DDSM115Communicator::setWheelRPM(int wheel_id, double rpm
     }
     total_num_bytes += num_bytes;
   }
+
+  //teste
   unlockPort();
   if (num_bytes < 0)
   {
