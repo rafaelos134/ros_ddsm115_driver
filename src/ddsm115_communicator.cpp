@@ -104,62 +104,62 @@ ddsm115_drive_response DDSM115Communicator::setWheelRPM(int wheel_id, double rpm
                           0x00,
                           0x00 };
   
-  // uint8_t drive_response[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+  uint8_t drive_response[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
 
 
-  // drive_cmd[9] = maximCrc8(drive_cmd, 9);
-  // lockPort();
-  
-  // write(port_fd_, &drive_cmd, sizeof(drive_cmd));
-  // int num_bytes = read(port_fd_, &drive_response[1], 1);
-
-  // ROS_INFO("Read %d bytes", num_bytes);
-
-
-
-
-
-
-
-  // Array para armazenar a resposta completa da roda
-  uint8_t drive_response[10] = {0}; // Inicializado com zeros
-
-  // 1. Calcula e insere o CRC no último byte do comando
   drive_cmd[9] = maximCrc8(drive_cmd, 9);
+  lockPort();
+  
+  write(port_fd_, &drive_cmd, sizeof(drive_cmd));
+  int num_bytes = read(port_fd_, &drive_response[1], 1);
 
-  lockPort(); // Presumindo que esta função gerencia o acesso concorrente à porta
+  ROS_INFO("Read %d bytes", num_bytes);
 
-  // 2. Escreve o comando e VERIFICA o retorno
-  ssize_t bytes_written = write(port_fd_, drive_cmd, sizeof(drive_cmd));
 
-  if (bytes_written != sizeof(drive_cmd)) {
-      perror("Erro ao escrever na porta serial");
-      // Lidar com o erro aqui...
-      unlockPort();
-  }
 
-  // 3. (MUITO IMPORTANTE) Aguarda um pequeno tempo para a roda processar e responder
-  usleep(10000); // 10.000 microssegundos = 10 milissegundos. Ajuste se necessário.
 
-  // 4. Lê a resposta COMPLETA (10 bytes)
-  //    - Passe o ponteiro para o início do array: drive_response
-  //    - Peça para ler o tamanho total do array: sizeof(drive_response)
-  ssize_t num_bytes = read(port_fd_, drive_response, sizeof(drive_response)); //meu problema está exatemente no read
 
-  if (num_bytes < 0) {
-    perror("Erro ao ler da porta serial");
-  } else if (num_bytes == 0) {
-      printf("Nenhum dado recebido. Timeout?\n");
-  } else {
-      printf("Recebidos %zd bytes:\n", num_bytes);
-      for (int i = 0; i < sizeof(drive_response); ++i) {
-          printf("Byte %d: 0x%02X\n", i, drive_response[i]);
-      }
 
-      // Aqui você pode adicionar a verificação do CRC da resposta para garantir
-      // que os dados recebidos são válidos.
-  }
+
+  // // Array para armazenar a resposta completa da roda
+  // uint8_t drive_response[10] = {0}; // Inicializado com zeros
+
+  // // 1. Calcula e insere o CRC no último byte do comando
+  // drive_cmd[9] = maximCrc8(drive_cmd, 9);
+
+  // lockPort(); // Presumindo que esta função gerencia o acesso concorrente à porta
+
+  // // 2. Escreve o comando e VERIFICA o retorno
+  // ssize_t bytes_written = write(port_fd_, drive_cmd, sizeof(drive_cmd));
+
+  // if (bytes_written != sizeof(drive_cmd)) {
+  //     perror("Erro ao escrever na porta serial");
+  //     // Lidar com o erro aqui...
+  //     unlockPort();
+  // }
+
+  // // 3. (MUITO IMPORTANTE) Aguarda um pequeno tempo para a roda processar e responder
+  // usleep(10000); // 10.000 microssegundos = 10 milissegundos. Ajuste se necessário.
+
+  // // 4. Lê a resposta COMPLETA (10 bytes)
+  // //    - Passe o ponteiro para o início do array: drive_response
+  // //    - Peça para ler o tamanho total do array: sizeof(drive_response)
+  // ssize_t num_bytes = read(port_fd_, drive_response, sizeof(drive_response)); //meu problema está exatemente no read
+
+  // if (num_bytes < 0) {
+  //   perror("Erro ao ler da porta serial");
+  // } else if (num_bytes == 0) {
+  //     printf("Nenhum dado recebido. Timeout?\n");
+  // } else {
+  //     printf("Recebidos %zd bytes:\n", num_bytes);
+  //     for (int i = 0; i < sizeof(drive_response); ++i) {
+  //         printf("Byte %d: 0x%02X\n", i, drive_response[i]);
+  //     }
+
+  //     // Aqui você pode adicionar a verificação do CRC da resposta para garantir
+  //     // que os dados recebidos são válidos.
+  // }
 
 
 
@@ -362,71 +362,109 @@ ddsm115_drive_response DDSM115Communicator::setWheelRPM(int wheel_id, double rpm
 
 
 
-// ddsm115_drive_response DDSM115Communicator::getWheelRPM(int wheel_id) {
+ddsm115_drive_response DDSM115Communicator::getWheelRPM(int wheel_id) {
 
-//   ddsm115_drive_response result;
+  ddsm115_drive_response result;
 
-//   // Monta o pacote de request de feedback
-//   uint8_t read_cmd[] = {
-//       (uint8_t)wheel_id,
-//       DDSM115Command::COMMAND_GET_OTHER_FEEDBACK, // <-- aqui usamos 0x74
-//       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-//   };
+  uint8_t read_cmd[] = {
+      (uint8_t)wheel_id,
+      DDSM115Command::COMMAND_GET_OTHER_FEEDBACK,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+  };
 
-//   uint8_t read_response[10] = {0};
-
-//   // // Calcula CRC
-//   read_cmd[9] = maximCrc8(read_cmd, 9);
-
-//   lockPort();
-//   write(port_fd_, &read_cmd, sizeof(read_cmd));
-
-//   int total_num_bytes = 0;
-//   int num_bytes = 0;
-//   for (int i = 0; i < sizeof(read_response); i++) {
-//     num_bytes = read(port_fd_, &read_response[i], 1);
-//     if (num_bytes <= 0) break;
-//     total_num_bytes += num_bytes;
-//   }
-//   unlockPort();
-
-//   // Os dois primeiros matam o codigo
-//   // if (num_bytes < 0 || total_num_bytes < 10) {
-//   //   result.result = DDSM115State::STATE_FAILED;
-//   //   return result;
-//   // }
-//   // if (read_response[0] != wheel_id) {
-//   //   result.result = DDSM115State::STATE_FAILED;
-//   //   return result;
-//   // }
+  uint8_t drive_response[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
 
-//   if (read_response[9] != maximCrc8(read_response, 9)) {
-//     result.result = DDSM115State::STATE_FAILED;
-//     return result;
-//   }
+  // // Calcula CRC
+  read_cmd[9] = maximCrc8(read_cmd, 9);
 
-//   // Decodificação igual ao setWheelRPM
-//   int16_t drive_current  = (read_response[2] << 8) | read_response[3];
-//   int16_t drive_velocity = (read_response[4] << 8) | read_response[5];
-//   uint16_t drive_position = (read_response[6] << 8) | read_response[7];
+  lockPort();
+
+  ssize_t s = write(port_fd_, read_cmd, sizeof(read_cmd));
+  
+
+
+
+  ssize_t num_bytes = read(port_fd_, drive_response, sizeof(drive_response));
+
+  ROS_INFO("Bytes recebidos: %zd", num_bytes);
+
+
+
+  // tcdrain(port_fd_);
+  // int total_num_bytes = 0;
+  // int num_bytes = 0;
+
+
+  // for (int i = 0; i < sizeof(drive_response); i++) {
+  //   num_bytes = read(port_fd_, &drive_response[i], 1);
+  //   ROS_INFO("bites %d", num_bytes);
+  //   if (num_bytes <= 0) break;
+  //   total_num_bytes += num_bytes;
+  // }
 
 
 
 
 
-//   result.velocity = (double)drive_velocity;
-//   result.position = (double)drive_position * (360.0 / 32767.0);
-//   result.current  = (double)drive_current * (8.0 / 32767.0);
-//   result.result   = DDSM115State::STATE_NORMAL;
+
+
+
+  // if (num_bytes == 10) {
+  //     ROS_INFO("Resposta recebida (%zd bytes):", num_bytes);
+  //     for (int i = 0; i < num_bytes; i++) {
+  //         ROS_INFO("Byte[%d] = 0x%02X", i, drive_response[i]);
+  //     }
+
+  //     // Montar os valores
+  //     int16_t torque = (drive_response[2] << 8) | drive_response[3];
+  //     int16_t velocity = (drive_response[4] << 8) | drive_response[5];
+  //     uint8_t temperature = drive_response[6];
+  //     uint8_t position = drive_response[7];
+  //     uint8_t error = drive_response[8];
+
+  //     ROS_INFO("Torque: %d", torque);
+  //     ROS_INFO("Velocidade: %d", velocity);
+  //     ROS_INFO("Temperatura: %d", temperature);
+  //     ROS_INFO("Posição: %d", position);
+  //     ROS_INFO("Erro: %d", error);
+  // } else {
+  //     ROS_WARN("Não recebi todos os 10 bytes, recebi apenas %zd", num_bytes);
+  // }
+
+
+
+  unlockPort();
+
+
+
+
+  if (drive_response[9] != maximCrc8(drive_response, 9)) {
+    result.result = DDSM115State::STATE_FAILED;
+    return result;
+  }
+
+  // Decodificação igual ao setWheelRPM
+  int16_t drive_current  = (drive_response[2] << 8) | drive_response[3];
+  int16_t drive_velocity = (drive_response[4] << 8) | drive_response[5];
+  uint16_t drive_position = (drive_response[6] << 8) | drive_response[7];
+
+
+
+
+
+  result.velocity = (double)drive_velocity;
+  result.position = (double)drive_position * (360.0 / 32767.0);
+  result.current  = (double)drive_current * (8.0 / 32767.0);
+  result.result   = DDSM115State::STATE_NORMAL;
 
 
 
   
-//   ROS_INFO("Wheel %d velocity = %f", wheel_id, result.velocity);
+  ROS_INFO("Wheel %d velocity = %f", wheel_id, result.velocity);
 
-//   return result;
-// }
+  return result;
+}
 
 
 
@@ -441,23 +479,23 @@ ddsm115_drive_response DDSM115Communicator::setWheelRPM(int wheel_id, double rpm
 
 
 
-// new
-/**
- * @brief get wheel sppeds
- * 
- * @param wheel_id 
- * @return velocity whell
- */
-ddsm115_drive_response DDSM115Communicator::getWheelRPM(int wheel_id){
+// // new
+// /**
+//  * @brief get wheel sppeds
+//  * 
+//  * @param wheel_id 
+//  * @return velocity whell
+//  */
+// ddsm115_drive_response DDSM115Communicator::getWheelRPM(int wheel_id){
 
-  ddsm115_drive_response response = last_responses[wheel_id];
-  // ROS_INFO("velocity = %f", response.velocity);
+//   ddsm115_drive_response response = last_responses[wheel_id];
+//   // ROS_INFO("velocity = %f", response.velocity);
 
-  // std::cout << response.velocity << std::endl;
+//   // std::cout << response.velocity << std::endl;
 
-  return response;
+//   return response;
 
-}
+// }
 
 
 /**
