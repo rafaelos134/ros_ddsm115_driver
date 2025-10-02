@@ -2,4 +2,8 @@
     <node name="ros_ddsm115_driver" pkg="ros_ddsm115_driver" type="ros_ddsm115_driver_node" output="screen">
         <rosparam file="$(find ros_ddsm115_driver)/config/ros_ddsm115_driver_config.yaml" />
     </node>
+
+    <node name="leitor_teleop_node" pkg="ros_ddsm115_driver" type="leitor_teleop_node" output="screen">
+    </node>
+
 </launch>
