@@ -34,10 +34,10 @@ private:
             ROS_INFO("Frente pressionada -> velocidade atual %.2f", current_speed);
         } 
         else if (msg->linear.x < 0.0) {
-            // Trás -> diminui velocidade
+        
             current_speed -= step;
             if (current_speed < min_speed) current_speed = min_speed;
-            ROS_INFO("Trás pressionada -> velocidade atual %.2f", current_speed);
+            ROS_INFO("Tras pressionada -> velocidade atual %.2f", current_speed);
         } 
         else {
             // Nenhuma tecla -> mantém velocidade (ou zera se quiser)
