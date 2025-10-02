@@ -127,6 +127,11 @@ void wheelTargetVelocityCallback(const std_msgs::Float64::ConstPtr& target_veloc
   ddsm115::ddsm115_drive_response response = ddsm115_communicator->setWheelRPM(
       wheel_ids_list[wheel_index], vel2Rpm(target_velocity_msg->data) * wheel_directions[wheel_index]);
 
+  ROS_INFO("I heard response: [%f] ", response.velocity);
+
+  // ddsm115::ddsm115_drive_response get = ddsm115_communicator->getWheelRPM(wheel_ids_list[wheel_index]);
+
+
   if (response.result == ddsm115::DDSM115State::STATE_NORMAL){
     velocity_msg.data = rpm2Vel(response.velocity) * wheel_directions[wheel_index];
     angle_msg.data = round(response.position * (2.0 * M_PI / 360.0) * wheel_directions[wheel_index] * 100) / 100 * -1.0;
@@ -134,9 +139,9 @@ void wheelTargetVelocityCallback(const std_msgs::Float64::ConstPtr& target_veloc
     wheel_velocity_pubs[wheel_index].publish(velocity_msg);
     wheel_angle_pubs[wheel_index].publish(angle_msg);
     wheel_current_pubs[wheel_index].publish(current_msg);
+
+    
   }
-
-
 }
 
 /**
@@ -242,8 +247,11 @@ int main(int argc, char** argv){
       Create wheel target velocity subscriber, bind with wheel name as additional parameter
       to handle all wheels with single callback
     */
-    ros::Subscriber velocity_sub = node.subscribe<std_msgs::Float64>("/" + wheel_names_list[i] + "/target_velocity", 1,
-                                          boost::bind(&wheelTargetVelocityCallback, _1, wheel_names_list[i]));
+
+    auto prov = boost::bind(&wheelTargetVelocityCallback, _1, wheel_names_list[i]);
+
+    ros::Subscriber velocity_sub = node.subscribe<std_msgs::Float64>("/" + wheel_names_list[i] + "/target_velocity", 1, prov);
+    
     wheel_velocity_subs.push_back(velocity_sub);
 
     // Create publisher for wheel velocity
@@ -273,7 +281,7 @@ int main(int argc, char** argv){
       
       std_msgs::Float64 vel_msg;
       vel_msg.data = response.velocity;
-      ROS_INFO("Received velocity command: %d", i);
+      // ROS_INFO("Received velocity command: %f", vel_msg.data );
 
       // wheel_velocity_pubs[i].publish(vel_msg);
       wheel_velocity_pubs[i].publish(vel_msg);
@@ -319,7 +327,7 @@ int main(int argc, char** argv){
 
 
 
-  
+  delete ddsm115_communicator;
 
   // Add signal handler for safe shutdown of the node
   signal(SIGINT, onShutdown);
