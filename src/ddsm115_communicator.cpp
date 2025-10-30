@@ -167,60 +167,72 @@ ddsm115_drive_response DDSM115Communicator::setWheelRPM(int wheel_id, double rpm
 
 // This funcition get the whellspeeds at each second, using a damming input
 
-ddsm115_drive_response DDSM115Communicator::getWheelRPM(int wheel_id) {
+// ddsm115_drive_response DDSM115Communicator::getWheelRPM(int wheel_id) {
 
-    ddsm115_drive_response result;
+//     ddsm115_drive_response result;
   
-    // Protocol 2: get other feedback.
-    uint8_t command_frame[10] = {
-        (uint8_t)wheel_id,
-        DDSM115Command::COMMAND_GET_OTHER_FEEDBACK,
-        0x00,
-        0x00,
-        0x00, 
-        0x00,
-        0x00,
-        0x00, 
-        0x00, 
-        0x00};
+//     // Protocol 2: get other feedback.
+//     uint8_t command_frame[10] = {
+//         (uint8_t)wheel_id,
+//         DDSM115Command::COMMAND_GET_OTHER_FEEDBACK,
+//         0x00,
+//         0x00,
+//         0x00, 
+//         0x00,
+//         0x00,
+//         0x00, 
+//         0x00, 
+//         0x00};
 
-    uint8_t response_frame[10] = {0};
+//     uint8_t response_frame[10] = {0};
 
-    lockPort();
-    tcflush(port_fd_, TCIFLUSH); 
-    write(port_fd_, command_frame, sizeof(command_frame));
-    int num_bytes = read(port_fd_, response_frame, sizeof(response_frame));
+//     lockPort();
+//     tcflush(port_fd_, TCIFLUSH); 
+//     write(port_fd_, command_frame, sizeof(command_frame));
+//     int num_bytes = read(port_fd_, response_frame, sizeof(response_frame));
 
-    unlockPort();
+//     unlockPort();
 
     
 
 
-    int16_t feedback_current  = (response_frame[2] << 8) | response_frame[3];
-    int16_t feedback_velocity = (response_frame[4] << 8) | response_frame[5];
-    uint16_t feedback_position = (response_frame[6] << 8) | response_frame[7];
-    uint8_t error_code        = response_frame[8];
+//     int16_t feedback_current  = (response_frame[2] << 8) | response_frame[3];
+//     int16_t feedback_velocity = (response_frame[4] << 8) | response_frame[5];
+//     uint16_t feedback_position = (response_frame[6] << 8) | response_frame[7];
+//     uint8_t error_code        = response_frame[8];
 
 
 
-    // --- Conversão com as UNIDADES CORRETAS da documentação ---
-    // O valor da velocidade já é RPM!
-    result.velocity = (double)feedback_velocity;
-    // Posição: 0~32767 -> 0~360 graus
-    result.position = (double)feedback_position * (360.0 / 32767.0);
-    // Corrente: -32767~32767 -> -8A~8A
-    result.current  = (double)feedback_current * (8.0 / 32767.0);
-    result.result   = DDSM115State::STATE_NORMAL;
+//     // --- Conversão com as UNIDADES CORRETAS da documentação ---
+//     // O valor da velocidade já é RPM!
+//     result.velocity = (double)feedback_velocity;
+//     // Posição: 0~32767 -> 0~360 graus
+//     result.position = (double)feedback_position * (360.0 / 32767.0);
+//     // Corrente: -32767~32767 -> -8A~8A
+//     result.current  = (double)feedback_current * (8.0 / 32767.0);
+//     result.result   = DDSM115State::STATE_NORMAL;
 
-    // if (error_code != 0) {
-    //     ROS_ERROR("Motor da roda %d reportou erro: 0x%02X", wheel_id, error_code);
-    // }
+//     // if (error_code != 0) {
+//     //     ROS_ERROR("Motor da roda %d reportou erro: 0x%02X", wheel_id, error_code);
+//     // }
     
-    ROS_INFO("Feedback RPM=%.2f", result.velocity);
+//     ROS_INFO("Feedback RPM=%.2f", result.velocity);
 
 
-    return result;
-  }
+//     return result;
+//   }
+
+
+/**
+ * @brief get wheel spped
+ * 
+ * @param wheel_id 
+ * @return velocity wheel
+ */
+ddsm115_drive_response DDSM115Communicator::getWheelRPM(int wheel_id){
+
+  return last_responses[wheel_id];
+}
 
 
   // uint8_t drive_response[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
