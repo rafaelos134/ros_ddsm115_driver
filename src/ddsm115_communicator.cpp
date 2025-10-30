@@ -165,6 +165,94 @@ ddsm115_drive_response DDSM115Communicator::setWheelRPM(int wheel_id, double rpm
   return result;
 }
 
+// This funcition get the whellspeeds at each second, using a damming input
+
+ddsm115_drive_response DDSM115Communicator::getWheelRPM(int wheel_id, int16_t target_rpm) {
+
+  ddsm115_drive_response result;
+  
+  // Protocol 2: get other feedback.
+  uint8_t command_frame[10] = {
+      (uint8_t)wheel_id,
+      DDSM115Command::COMMAND_GET_OTHER_FEEDBACK,
+      0x00,
+      0x00,
+      0x00, 
+      0x00,
+      0x00,
+      0x00, 
+      0x00, 
+      0x00};
+
+  // Calcula o CRC sobre os 9 primeiros bytes
+  command_frame[9] = maximCrc8(command_frame, 9);
+
+  uint8_t response_frame[10] = {0};
+
+  lockPort();
+  tcflush(port_fd_, TCIFLUSH); 
+  
+  write(port_fd_, command_frame, sizeof(command_frame));
+
+  // Lê a resposta do motor
+  int num_bytes = read(port_fd_, response_frame, sizeof(response_frame));
+  
+  unlockPort();
+
+//   // --- Verificações de erro (essenciais) ---
+  if (num_bytes != 10) {
+    ROS_WARN("Falha na leitura para roda %d: esperava 10 bytes, recebeu %d", wheel_id, num_bytes);
+    result.result = DDSM115State::STATE_FAILED;
+    return result;
+  }
+//   if (response_frame[9] != maximCrc8(response_frame, 9)) {
+//     ROS_WARN("Erro de CRC na resposta da roda %d", wheel_id);
+//     result.result = DDSM115State::STATE_FAILED;
+//     return result;
+//   }
+
+//   // --- Decodificação da RESPOSTA (Motor Feedback) ---
+//   // A estrutura da resposta é a mesma, mas agora os dados são válidos!
+//   int16_t feedback_current  = (response_frame[2] << 8) | response_frame[3];
+//   int16_t feedback_velocity = (response_frame[4] << 8) | response_frame[5];
+//   uint16_t feedback_position = (response_frame[6] << 8) | response_frame[7];
+//   uint8_t error_code        = response_frame[8];
+
+//   // --- Conversão com as UNIDADES CORRETAS da documentação ---
+//   // O valor da velocidade já é RPM!
+//   result.velocity = (double)feedback_velocity;
+//   // Posição: 0~32767 -> 0~360 graus
+//   result.position = (double)feedback_position * (360.0 / 32767.0);
+//   // Corrente: -32767~32767 -> -8A~8A
+//   result.current  = (double)feedback_current * (8.0 / 32767.0);
+//   result.result   = DDSM115State::STATE_NORMAL;
+
+//   if (error_code != 0) {
+//       ROS_ERROR("Motor da roda %d reportou erro: 0x%02X", wheel_id, error_code);
+//   }
+  
+//   ROS_INFO("Roda %d: Cmd RPM=%d, Feedback RPM=%.2f", wheel_id, target_rpm, result.velocity);
+
+  return result;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /**
  * @brief Lock communication mutex
  * 
