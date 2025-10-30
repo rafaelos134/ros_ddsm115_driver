@@ -266,29 +266,29 @@ int main(int argc, char** argv)
 
 
   // get and pub velocities
-  // ros::Rate rate(1); 
-  // std::cout << ddsm115_communicator << std::endl;
-  // while (ros::ok()) {
+  ros::Rate rate(1); 
+  std::cout << ddsm115_communicator << std::endl;
+  while (ros::ok()) {
     
     
-  //   for (int i = 0; i < (int)wheel_names_list.size(); i++) {
-  //     ddsm115::ddsm115_drive_response response = ddsm115_communicator->getWheelRPM(wheel_ids_list[i]);
+    for (int i = 0; i < (int)wheel_names_list.size(); i++) {
+      ddsm115::ddsm115_drive_response response = ddsm115_communicator->getWheelRPM(wheel_ids_list[i]);
 
-  //     // std::cout << ddsm115_communicator << std::endl;
+      // std::cout << ddsm115_communicator << std::endl;
 
-  //     std_msgs::Float64 vel_msg;
-  //     vel_msg.data = rpm2Vel(response.velocity) * wheel_directions[i];
+      std_msgs::Float64 vel_msg;
+      vel_msg.data = rpm2Vel(response.velocity) * wheel_directions[i];
 
-  //     wheel_velocity_pubs[i].publish(vel_msg);
+      wheel_velocity_pubs[i].publish(vel_msg);
 
-  //     ROS_INFO("Received velocity command: %f", vel_msg.data );
+      ROS_INFO("Received velocity command: %f", vel_msg.data );
         
-  //   }
+    }
 
-  //   ros::spinOnce();
-  //   rate.sleep();
+    ros::spinOnce();
+    rate.sleep();
           
-  // }
+  }
 
 
 

@@ -165,7 +165,11 @@ ddsm115_drive_response DDSM115Communicator::setWheelRPM(int wheel_id, double rpm
   result.current = (double)drive_current * (8.0 / 32767.0);
   result.result = DDSM115State::STATE_NORMAL;
 
+  last_responses[wheel_id] = result;
 
+  // sdt::cout << "funcao" << std::endl;
+  
+  std::cout << last_responses[wheel_id].velocity << std::endl;
   
   return result;
 }
