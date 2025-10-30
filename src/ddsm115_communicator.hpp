@@ -62,6 +62,7 @@ public:
   void disconnect();
   void setWheelMode(int wheel_id, DDSM115Mode mode);
   ddsm115_drive_response setWheelRPM(int wheel_id, double rpm);
+  ddsm115_drive_response getWheelRPM(int wheel_id);
   DDSM115State getState();
 
 private:

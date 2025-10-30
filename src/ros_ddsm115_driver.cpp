@@ -262,6 +262,34 @@ int main(int argc, char** argv)
     // Set wheel mode to velocity loop
     ddsm115_communicator->setWheelMode(wheel_ids_list[i], ddsm115::DDSM115Mode::VELOCITY_LOOP);
   }
+
+
+  // get and pub velocities at 1 sec
+  ros::Rate rate(1); 
+
+    while (ros::ok()) {
+    for (int i = 0; i < (int)wheel_names_list.size(); i++) {
+      ddsm115::ddsm115_drive_response response = ddsm115_communicator->getWheelRPM(wheel_ids_list[i]);
+      
+      std_msgs::Float64 vel_msg;
+      vel_msg.data = response.velocity;
+      ROS_INFO("Received velocity command: %f", vel_msg.data );
+      // ROS_INFO("Received velocity command");
+
+      // wheel_velocity_pubs[i].publish(vel_msg);
+      wheel_velocity_pubs[i].publish(vel_msg);
+        
+    }
+
+    ros::spinOnce();
+    rate.sleep();
+          
+  }
+
+
+
+
+
   // Add signal handler for safe shutdown of the node
   signal(SIGINT, onShutdown);
   // Run the node
