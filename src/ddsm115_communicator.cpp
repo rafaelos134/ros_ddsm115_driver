@@ -118,14 +118,15 @@ ddsm115_drive_response DDSM115Communicator::setWheelRPM(int wheel_id, double rpm
 
   //teste
   unlockPort();
-  if (num_bytes < 0)
-  {
+
+
+  if (num_bytes < 0){
     ROS_ERROR("Error reading DDSM115 response for wheel id %d", wheel_id);
     result.result = DDSM115State::STATE_FAILED;
     return result;
   }
-  if (total_num_bytes < 10)
-  {
+  
+  if (total_num_bytes < 10){
     // ROS_WARN("Timeout reading DDSM115 response for wheel id %d", wheel_id);
     // ROS_INFO("Received %d bytes", total_num_bytes);
     // for (int i = 0; i < 10; i++) {
@@ -134,18 +135,19 @@ ddsm115_drive_response DDSM115Communicator::setWheelRPM(int wheel_id, double rpm
     result.result = DDSM115State::STATE_FAILED;
     return result;
   }
-  if (drive_response[0] != wheel_id)
-  {
+
+  if (drive_response[0] != wheel_id){
     ROS_INFO("Received response for wheel %d instead of %d", drive_response[0], wheel_id);
     result.result = DDSM115State::STATE_FAILED;
     return result;
   }
-  if (drive_response[9] != maximCrc8(drive_response, 9))
-  {
+
+  if (drive_response[9] != maximCrc8(drive_response, 9)){
     ROS_ERROR("CRC error in response from wheel id %d", wheel_id);
     result.result = DDSM115State::STATE_FAILED;
     return result;
   }
+
   // TODO: this implementation of data decoding is not endian safe
   int16_t drive_current = 0;
   int16_t drive_velocity = 0;
@@ -162,8 +164,17 @@ ddsm115_drive_response DDSM115Communicator::setWheelRPM(int wheel_id, double rpm
   result.position = (double)drive_position * (360.0 / 32767.0);
   result.current = (double)drive_current * (8.0 / 32767.0);
   result.result = DDSM115State::STATE_NORMAL;
+
+
+  
   return result;
 }
+
+
+
+
+
+
 
 // This funcition get the whellspeeds at each second, using a damming input
 
