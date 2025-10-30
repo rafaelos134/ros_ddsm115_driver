@@ -64,6 +64,7 @@ public:
   ddsm115_drive_response setWheelRPM(int wheel_id, double rpm);
   ddsm115_drive_response getWheelRPM(int wheel_id);
   DDSM115State getState();
+  std::map<int, ddsm115_drive_response> last_responses;
 
 private:
   std::string port_name_;
