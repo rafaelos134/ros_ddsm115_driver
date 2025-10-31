@@ -268,20 +268,28 @@ int main(int argc, char** argv)
   // get and pub velocities
   ros::Rate rate(1); 
   std::cout << ddsm115_communicator << std::endl;
+  
+  std_msgs::Float64 vel_msg;
+  std_msgs::Float64 ang_msg;
+  std_msgs::Float64 curr_msg;
+
+
+
   while (ros::ok()) {
     
     
-    for (int i = 0; i < (int)wheel_names_list.size(); i++) {
-      ddsm115::ddsm115_drive_response response = ddsm115_communicator->getWheelRPM(wheel_ids_list[i]);
+    for (int wheel_index = 0; wheel_index < (int)wheel_names_list.size(); wheel_index++) {
+      ddsm115::ddsm115_drive_response response = ddsm115_communicator->getWheelRPM(wheel_ids_list[wheel_index]);
 
-      // std::cout << ddsm115_communicator << std::endl;
+      vel_msg.data = rpm2Vel(response.velocity) * wheel_directions[wheel_index];
+      ang_msg.data = round(response.position * (2.0 * M_PI / 360.0) * wheel_directions[wheel_index] * 100) / 100 * -1.0;
+      curr_msg.data = response.current;
 
-      std_msgs::Float64 vel_msg;
-      vel_msg.data = rpm2Vel(response.velocity) * wheel_directions[i];
+      wheel_velocity_pubs[wheel_index].publish(vel_msg);
+      wheel_angle_pubs[wheel_index].publish(ang_msg);
+      wheel_current_pubs[wheel_index].publish(curr_msg);
 
-      wheel_velocity_pubs[i].publish(vel_msg);
-
-      ROS_INFO("Received velocity command: %f", vel_msg.data );
+      // ROS_INFO("Received velocity command: %f", vel_msg.data );
         
     }
 

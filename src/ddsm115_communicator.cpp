@@ -77,33 +77,23 @@ void DDSM115Communicator::setWheelMode(int wheel_id, DDSM115Mode mode)
   unlockPort();
 }
 
+
 /**
- * @brief Drive DDSM115 wheel and get it's feedback
+ * @brief Calculate the DDSM115 RPM
  * 
  * @param wheel_id 
- * @param rpm 
+ * @param drive_cmd
  * @return ddsm115_drive_response 
  */
-ddsm115_drive_response DDSM115Communicator::setWheelRPM(int wheel_id, double rpm)
-{
+ddsm115_drive_response DDSM115Communicator::WheelRPMCalculus(int wheel_id, uint8_t drive_cmd[]){
+  
   ddsm115_drive_response result;
-  int16_t rpm_value = (int16_t)rpm;
-  // TODO: this implementation of data encoding is not endian safe
-  uint8_t drive_cmd[] = { (uint8_t)wheel_id,
-                          DDSM115Command::COMMAND_DRIVE_MOTOR,
-                          (uint8_t)((rpm_value >> 8) & 0xFF),
-                          (uint8_t)(rpm_value & 0xFF),
-                          0x00,
-                          0x00,
-                          0x00,
-                          0x00,
-                          0x00,
-                          0x00 };
+
   uint8_t drive_response[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
   drive_cmd[9] = maximCrc8(drive_cmd, 9);
   lockPort();
-  write(port_fd_, &drive_cmd, sizeof(drive_cmd));
-  // tcdrain(port_fd_);
+  write(port_fd_, drive_cmd, 10);
+  tcdrain(port_fd_);
   int total_num_bytes = 0;
   int num_bytes = 0;
 
@@ -164,179 +154,81 @@ ddsm115_drive_response DDSM115Communicator::setWheelRPM(int wheel_id, double rpm
   result.position = (double)drive_position * (360.0 / 32767.0);
   result.current = (double)drive_current * (8.0 / 32767.0);
   result.result = DDSM115State::STATE_NORMAL;
-
-  last_responses[wheel_id] = result;
-
-  // sdt::cout << "funcao" << std::endl;
-  
-  std::cout << last_responses[wheel_id].velocity << std::endl;
   
   return result;
 }
 
 
 
-
-
-
-
-// This funcition get the whellspeeds at each second, using a damming input
-
-// ddsm115_drive_response DDSM115Communicator::getWheelRPM(int wheel_id) {
-
-//     ddsm115_drive_response result;
-  
-//     // Protocol 2: get other feedback.
-//     uint8_t command_frame[10] = {
-//         (uint8_t)wheel_id,
-//         DDSM115Command::COMMAND_GET_OTHER_FEEDBACK,
-//         0x00,
-//         0x00,
-//         0x00, 
-//         0x00,
-//         0x00,
-//         0x00, 
-//         0x00, 
-//         0x00};
-
-//     uint8_t response_frame[10] = {0};
-
-//     lockPort();
-//     tcflush(port_fd_, TCIFLUSH); 
-//     write(port_fd_, command_frame, sizeof(command_frame));
-//     int num_bytes = read(port_fd_, response_frame, sizeof(response_frame));
-
-//     unlockPort();
-
-    
-
-
-//     int16_t feedback_current  = (response_frame[2] << 8) | response_frame[3];
-//     int16_t feedback_velocity = (response_frame[4] << 8) | response_frame[5];
-//     uint16_t feedback_position = (response_frame[6] << 8) | response_frame[7];
-//     uint8_t error_code        = response_frame[8];
-
-
-
-//     // --- Conversão com as UNIDADES CORRETAS da documentação ---
-//     // O valor da velocidade já é RPM!
-//     result.velocity = (double)feedback_velocity;
-//     // Posição: 0~32767 -> 0~360 graus
-//     result.position = (double)feedback_position * (360.0 / 32767.0);
-//     // Corrente: -32767~32767 -> -8A~8A
-//     result.current  = (double)feedback_current * (8.0 / 32767.0);
-//     result.result   = DDSM115State::STATE_NORMAL;
-
-//     // if (error_code != 0) {
-//     //     ROS_ERROR("Motor da roda %d reportou erro: 0x%02X", wheel_id, error_code);
-//     // }
-    
-//     ROS_INFO("Feedback RPM=%.2f", result.velocity);
-
-
-//     return result;
-//   }
-
-
 /**
- * @brief get wheel spped
+ * @brief Drive DDSM115 wheel and get it's feedback
  * 
  * @param wheel_id 
- * @return velocity wheel
+ * @param rpm 
+ * @return ddsm115_drive_response 
  */
-ddsm115_drive_response DDSM115Communicator::getWheelRPM(int wheel_id){
-
-  return last_responses[wheel_id];
+ddsm115_drive_response DDSM115Communicator::setWheelRPM(int wheel_id, double rpm){
+  
+  int16_t rpm_value = (int16_t)rpm;
+  
+  // TODO: this implementation of data encoding is not endian safe
+  uint8_t drive_cmd[] = { (uint8_t)wheel_id,
+                          DDSM115Command::COMMAND_DRIVE_MOTOR,
+                          (uint8_t)((rpm_value >> 8) & 0xFF),
+                          (uint8_t)(rpm_value & 0xFF),
+                          0x00,
+                          0x00,
+                          0x00,
+                          0x00,
+                          0x00,
+                          0x00 };
+  
+  
+  ddsm115_drive_response result = WheelRPMCalculus(wheel_id, drive_cmd);
+  
+  return result;
 }
 
 
-  // uint8_t drive_response[] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-  // command_frame[9] = maximCrc8(command_frame, 9);
-  // lockPort();
-  // write(port_fd_, &command_frame, sizeof(command_frame));
-  // // tcdrain(port_fd_);
-  // int total_num_bytes = 0;
-  // int num_bytes = 0;
 
-
-  // for (int i = 0; i < sizeof(drive_response); i++) {
-  //   num_bytes = read(port_fd_, &drive_response[i], 1);
-  //   if (num_bytes <= 0) {
-  //     break;
-  //   }
-  //   total_num_bytes += num_bytes;
-  // }
-
-
-  // unlockPort();
-
-
-  // // Calcula o CRC sobre os 9 primeiros bytes
-  // command_frame[9] = maximCrc8(command_frame, 9);
-
-  // uint8_t response_frame[10] = {0};
-
-  // lockPort();
-  // tcflush(port_fd_, TCIFLUSH); 
+/**
+ * @brief get feedback with a input dammy
+ * 
+ * @param wheel_id  
+ * @return ddsm115_drive_response 
+ */
+ddsm115_drive_response DDSM115Communicator::getWheelRPM(int wheel_id){
   
-  // write(port_fd_, command_frame, sizeof(command_frame));
 
-  // // Lê a resposta do motor
-  // int num_bytes = read(port_fd_, response_frame, sizeof(response_frame));
+  // TODO: this implementation of data encoding is not endian safe
+  uint8_t drive_cmd[] = { (uint8_t)wheel_id,
+                          DDSM115Command::COMMAND_GET_OTHER_FEEDBACK,
+                          0x00,
+                          0x00,
+                          0x00,
+                          0x00,
+                          0x00,
+                          0x00,
+                          0x00,
+                          0x00 };
+
+
+ ddsm115_drive_response result = WheelRPMCalculus(wheel_id, drive_cmd);
   
-  // unlockPort();
+ return result;
+}
 
-//   // --- Verificações de erro (essenciais) ---
-  // if (num_bytes != 10) {
-  //   ROS_WARN("Falha na leitura para roda %d: esperava 10 bytes, recebeu %d", wheel_id, num_bytes);
-  //   result.result = DDSM115State::STATE_FAILED;
-  //   return result;
-  // }
-//   if (response_frame[9] != maximCrc8(response_frame, 9)) {
-//     ROS_WARN("Erro de CRC na resposta da roda %d", wheel_id);
-//     result.result = DDSM115State::STATE_FAILED;
-//     return result;
-//   }
+//funciona
+// /**
+//  * @brief get wheel spped
+//  * 
+//  * @param wheel_id 
+//  * @return velocity wheel
+//  */
+// ddsm115_drive_response DDSM115Communicator::getWheelRPM(int wheel_id){
 
-//   // --- Decodificação da RESPOSTA (Motor Feedback) ---
-//   // A estrutura da resposta é a mesma, mas agora os dados são válidos!
-//   int16_t feedback_current  = (response_frame[2] << 8) | response_frame[3];
-//   int16_t feedback_velocity = (response_frame[4] << 8) | response_frame[5];
-//   uint16_t feedback_position = (response_frame[6] << 8) | response_frame[7];
-//   uint8_t error_code        = response_frame[8];
-
-//   // --- Conversão com as UNIDADES CORRETAS da documentação ---
-//   // O valor da velocidade já é RPM!
-//   result.velocity = (double)feedback_velocity;
-//   // Posição: 0~32767 -> 0~360 graus
-//   result.position = (double)feedback_position * (360.0 / 32767.0);
-//   // Corrente: -32767~32767 -> -8A~8A
-//   result.current  = (double)feedback_current * (8.0 / 32767.0);
-//   result.result   = DDSM115State::STATE_NORMAL;
-
-//   if (error_code != 0) {
-//       ROS_ERROR("Motor da roda %d reportou erro: 0x%02X", wheel_id, error_code);
-//   }
-  
-//   ROS_INFO("Roda %d: Cmd RPM=%d, Feedback RPM=%.2f", wheel_id, target_rpm, result.velocity);
-
-//   return;
+//   return last_responses[wheel_id];
 // }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

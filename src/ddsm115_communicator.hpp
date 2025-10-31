@@ -67,6 +67,7 @@ public:
   std::map<int, ddsm115_drive_response> last_responses;
 
 private:
+  ddsm115_drive_response WheelRPMCalculus(int wheel_id, uint8_t drive_cmd[]);
   std::string port_name_;
   int port_fd_;
   pthread_mutex_t port_mutex_;
