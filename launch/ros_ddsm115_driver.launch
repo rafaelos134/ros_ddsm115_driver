@@ -5,5 +5,4 @@
 
     <node name="leitor_teleop_node" pkg="ros_ddsm115_driver" type="leitor_teleop_node" output="screen">
     </node>
-
 </launch>
